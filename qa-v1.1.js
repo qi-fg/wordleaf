@@ -4,7 +4,7 @@ async(page)=>{
   const assert=(ok,msg)=>{if(!ok)throw Error(msg);checks.push(msg);};
   const click=name=>page.getByRole('button',{name,exact:true}).click();
   const action=(a,id)=>page.locator(`[data-action="${a}"]${id?'[data-id="'+id+'"]':''}`).first().click();
-  const read=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('wordleaf-state')));
+  const read=()=>page.evaluate(()=>{const data=JSON.parse(localStorage.getItem('wordleaf-state'));return data.version===3?data.books[data.activeMode]:data;});
   const saveFixture=async(s)=>{await page.goto('http://127.0.0.1:8765/qa-blank');await page.evaluate(s=>localStorage.setItem('wordleaf-state',JSON.stringify(s)),s);await page.goto('http://127.0.0.1:8765/');};
   const legacy=await page.evaluate(()=>{const d=new Date();d.setDate(d.getDate()-1);const key=dayKey(d),out=WORDS[2000].w;return{version:1,dataset:DATASET,goal:20,words:{government:{stage:2,due:Date.now()+DAY,reps:2,star:true,first:key,lapses:1},[out]:{stage:3,due:Date.now()+DAY,reps:3,star:true,first:key,lapses:0}},history:{[key]:{words:['government',out],new:['government',out],attempts:5}}};});
   const outside=Object.keys(legacy.words)[1];await saveFixture(legacy);
