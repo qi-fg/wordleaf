@@ -1,0 +1,13 @@
+tools/
+build/
+.playwright-cli/
+output/
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+signing-password.txt
+.env
+.env.*
+node_modules/

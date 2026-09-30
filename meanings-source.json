@@ -1,0 +1,8 @@
+{
+  "count": 5406,
+  "reviewed": 340,
+  "first300Reviewed": true,
+  "source": "Reviewed concise meanings for the first 300 reference-ranked words and the original-example batch. Remaining words are shortened from ECDICT Chinese definitions, taking at most two senses per part of speech, at most three parts of speech, omitting labelled specialist lines.",
+  "limitation": "No CET-6 exam sense-frequency statistics available; these are primary-learning meanings, not verified high-frequency exam senses.",
+  "preparedDate": "2026-09-30"
+}

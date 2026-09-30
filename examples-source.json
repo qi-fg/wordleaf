@@ -1,0 +1,7 @@
+{
+  "count": 200,
+  "source": "Original short learning sentences written for Wordleaf; not quotations or CET-6 exam sentences.",
+  "coverage": "First batch; missing words explicitly show no example in the app.",
+  "checks": "Every target exists in the vocabulary, occurs as a whole word in the English sentence, has a Chinese translation and a focused meaning; each pair reviewed for usage and translation.",
+  "preparedDate": "2026-09-30"
+}
