@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.wordleaf.cet6" android:versionCode="4" android:versionName="1.3.0">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.wordleaf.cet6" android:versionCode="5" android:versionName="1.3.1">
   <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
   <queries><intent><action android:name="android.intent.action.TTS_SERVICE" /></intent></queries>
   <application android:label="词芽" android:icon="@drawable/icon" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:usesCleartextTraffic="false" android:supportsRtl="true">

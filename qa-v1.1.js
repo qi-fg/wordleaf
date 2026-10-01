@@ -84,6 +84,9 @@ async(page)=>{
   await page.locator('input[name="tiers"][value="common"]').uncheck();await page.locator('input[name="tiers"][value="extended"]').uncheck();await click('保存学习计划');s=await read();
   assert(s.plan.route==='custom'&&s.plan.ids.length===100&&s.plan.ids.every(w=>w!==undefined),'Custom route stores its chosen cohort');
   assert(await page.evaluate(()=>state.plan.ids.every(w=>WORD_MAP.get(w).tier==='intermediate')),'Custom intermediate route excludes other tiers');
+  // A completed day keeps its locked quota after changing scope; inspect a new card on the next day.
+  await page.clock.setFixedTime(new Date(before+86400000));
+  await page.reload();
   await click('开始今日学习');assert(await page.getByText('本词暂未配例句。',{exact:true}).count()===0,'Unrevealed card does not leak its explanation');
   await click('查看释义');assert(await page.getByText('本词暂未配例句。',{exact:true}).count()===1,'Missing example coverage is stated clearly');
   await click('退出学习');await click('保存位置，回到今日');
