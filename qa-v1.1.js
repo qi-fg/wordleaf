@@ -36,7 +36,7 @@ async(page)=>{
   await click('词库');await click('今日');await click('继续上次学习');
   assert(await page.getByRole('heading',{name:'point',exact:true}).count()===1,'Browsing other pages does not erase the saved position');
   for(let i=0;i<4;i++){await click('查看释义');await action('rate','good');}
-  assert(await page.getByRole('heading',{name:'这一组，记住了。',exact:true}).count()===1,'Learning pauses after five practices for a short group');
+  assert(await page.getByRole('heading',{name:'这一组，完成了。',exact:true}).count()===1,'Learning pauses after five practices for a short group');
   await click('测一测这组的拼写');s=await read();assert(s.session.kind==='spell'&&s.session.returnCards.index===6,'Batch spelling retains the paused meaning-learning position');
   const meaningStage=s.words.provide.stage,meaningDue=s.words.provide.due;
   await page.getByLabel('英文拼写').fill('  PROVIDE  ');await click('提交拼写');s=await read();
