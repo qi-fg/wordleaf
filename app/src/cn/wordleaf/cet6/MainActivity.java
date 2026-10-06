@@ -19,6 +19,7 @@ public class MainActivity extends Activity {
     private WebView web;
     private TextToSpeech tts;
     private boolean speechReady;
+    private AppUpdater updater;
     private String pendingExport;
     private static final String HOST = "app.wordleaf.local";
 
@@ -74,12 +75,22 @@ public class MainActivity extends Activity {
                 }
             }
         });
+        updater = new AppUpdater(this, data -> js("window.receiveUpdate && window.receiveUpdate(" + data.toString() + ")"));
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override public void onProgressChanged(WebView view, int progress) { if(progress==100) updater.autoCheck(); }
+        });
         web.loadUrl("https://" + HOST + "/index.html");
     }
     private WebResourceResponse denied() { return new WebResourceResponse("text/plain","UTF-8",403,"Forbidden",null,new ByteArrayInputStream(new byte[0])); }
     private void toast(String text) { runOnUiThread(() -> Toast.makeText(this,text,Toast.LENGTH_LONG).show()); }
     private void js(String code) { runOnUiThread(() -> web.evaluateJavascript(code,null)); }
     private class Bridge {
+        @JavascriptInterface public void checkUpdate(boolean manual) { if(updater!=null)updater.check(manual); }
+        @JavascriptInterface public void downloadUpdate() { if(updater!=null)updater.download(); }
+        @JavascriptInterface public void installUpdate() { if(updater!=null)updater.install(); }
+        @JavascriptInterface public void openRelease() { if(updater!=null)updater.openRelease(); }
+        @JavascriptInterface public boolean autoUpdateEnabled() { return updater==null||updater.autoEnabled(); }
+        @JavascriptInterface public void setAutoUpdate(boolean enabled) { if(updater!=null)updater.setAuto(enabled); }
         @JavascriptInterface public String getState() { return getSharedPreferences("wordleaf", MODE_PRIVATE).getString("state", ""); }
         @JavascriptInterface public void saveState(String state) {
             if (state != null && state.length() <= 5000000) getSharedPreferences("wordleaf", MODE_PRIVATE).edit().putString("state", state).apply();
@@ -133,6 +144,7 @@ public class MainActivity extends Activity {
     }
     @Override protected void onResume() {
         super.onResume();
+        if(updater!=null)updater.resumed();
         if (web != null) web.evaluateJavascript("window.resumeLearningClock && window.resumeLearningClock(" + System.currentTimeMillis() + ")", null);
     }
     @Override protected void onDestroy() { if (tts != null) tts.shutdown(); if (web != null) { web.removeJavascriptInterface("Android"); web.destroy(); } super.onDestroy(); }

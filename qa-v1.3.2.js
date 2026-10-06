@@ -1,0 +1,36 @@
+async(page)=>{
+ const checks=[],errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const assert=(ok,label)=>{if(!ok)throw Error(label);checks.push(label);};
+ await page.setViewportSize({width:390,height:844});await page.goto('http://127.0.0.1:8765/');
+ const data=await page.evaluate(()=>{const s=fresh();s.reviewGoal=5;s.goal=5;s.planChosen=true;for(const w of WORDS.slice(0,40))s.words[w.w]={...emptyProgress(),reps:1,stage:1,due:1,first:'2026-09-01'};return{version:3,activeMode:'cet6',books:{cet6:s}};});
+ await page.goto('http://127.0.0.1:8765/qa-blank');await page.evaluate(d=>localStorage.setItem('wordleaf-state',JSON.stringify(d)),data);await page.goto('http://127.0.0.1:8765/');
+ assert(await page.evaluate(()=>plannedReviewWords().length===5&&dueWords().length===40),'Forty due words produce a five-word daily plan');
+ assert(await page.locator('.review-summary').innerText().then(t=>t.includes('待安排 35')),'Backlog is distinct from today’s plan');
+ await page.locator('[data-action=start][data-id=review]').click();
+ assert(await page.evaluate(()=>study.queue.length===5),'Standalone review respects daily quota');
+ await page.evaluate(()=>{for(let i=0;i<5;i++){study.pause='';study.revealed=true;rate('good');}});
+ assert(await page.evaluate(()=>today().reviewed.length===5&&plannedReviewWords().length===0),'Completed quota prevents automatic additional reviews');
+ await page.evaluate(()=>undo());assert(await page.evaluate(()=>today().reviewed.length===4),'Undo restores review quota');
+ await page.evaluate(()=>{study.revealed=true;rate('good');});await page.locator('[data-action=finish]').click();
+ await page.locator('[data-action=start][data-id=reviewExtra]').click();assert(await page.evaluate(()=>study.queue.length===10&&study.mode==='reviewExtra'),'Extra reviews require explicit action and are limited to ten');
+ await page.evaluate(()=>{study.revealed=true;rate('again');const w=study.queue[0];recordPractice(w,false,false);});
+ assert(await page.evaluate(()=>today().reviewed.length===6),'Repeated review of a word consumes only one quota slot');
+ await page.evaluate(()=>{const w=WORDS[100].w;recordPractice(w,true);recordPractice(w,false);recordPractice(WORDS[101].w,false,true,true);});
+ assert(await page.evaluate(()=>today().reviewed.length===6),'Same-day new-word retries and spelling do not consume review quota');
+ assert(await page.evaluate(()=>validateLibrary(clone(snapshotLibrary())).books.cet6.reviewGoal===5),'Backup preserves review setting and explicit extra session');
+ assert(await page.evaluate(()=>{const s=clone(state);delete s.reviewGoal;for(const h of Object.values(s.history))delete h.reviewed;return validate(s).reviewGoal===20&&validate(s).history[dayKey()].reviewed.length===0;}),'Old backups receive defaults without inventing review history');
+ assert(await page.evaluate(()=>{const s=clone(state);s.reviewGoal=-1;try{validate(s);return false;}catch(e){return true;}}),'Invalid review quota is rejected');
+ assert(await page.evaluate(()=>{const s=clone(state);s.history[dayKey()].reviewed=[WORDS[100].w];try{validate(s);return false;}catch(e){return true;}}),'New words cannot also be imported as review words on the same day');
+ await page.reload();assert(await page.evaluate(()=>today().reviewed.length===6&&state.session.mode==='reviewExtra'),'Reload retains daily review ledger and extra session');
+ await page.evaluate(()=>{switchMode('cet4');});assert(await page.evaluate(()=>state.reviewGoal===20&&today().reviewed.length===0),'Review quotas are independent across modes');
+ await page.evaluate(()=>switchMode('cet6'));await page.evaluate(()=>{page='stats';render();});
+ await page.getByLabel('每天的复习额度',{exact:true}).selectOption('10');assert(await page.evaluate(()=>state.reviewGoal===10&&plannedReviewWords().length===4),'Changing review quota counts reviews already completed today');
+ await page.locator('[data-action=update]').click();assert(await page.getByRole('dialog').innerText().then(t=>t.includes('当前版本 1.3.2')&&t.includes('系统确认覆盖安装')),'Update panel explains version and system installation');
+ await page.evaluate(()=>receiveUpdate({status:'available',message:'发现新版 1.3.3',notes:'测试 <script> 标签'}));assert(await page.locator('[data-action=update-download]').count()===1&&await page.locator('.update-notes script').count()===0,'Available update exposes download and escapes remote release notes');
+ await page.evaluate(()=>receiveUpdate({status:'downloading',message:'正在下载 50%'}));assert(await page.locator('[data-action=update-download]').count()===0,'Downloading state prevents duplicate download actions');
+ await page.evaluate(()=>receiveUpdate({status:'ready',message:'校验完成'}));assert(await page.locator('[data-action=update-install]').count()===1,'Verified download exposes installation action');
+ await page.evaluate(()=>receiveUpdate({status:'error',message:'连接失败'}));assert(await page.locator('[data-action=update-browser]').count()===1,'Network failure retains manual download fallback');
+ await page.locator('[data-action=close]').click();assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Settings fit a narrow phone screen');
+ await page.clock.setFixedTime(new Date(Date.now()+86400000));assert(await page.evaluate(()=>today().reviewed.length===0&&plannedReviewWords().length===10),'New day receives a fresh review quota');
+ assert(errors.length===0,'No browser errors');return{passed:checks.length,checks};
+}
