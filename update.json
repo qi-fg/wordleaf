@@ -1,8 +1,8 @@
 {
-  "notes": "复习默认每日20词，可调整额度；首页区分今日安排与积压，可额外加练10词。新增App内检查、下载和安装更新，保留APK手动下载。",
-  "size": 459795,
-  "versionName": "1.3.2",
-  "url": "https://github.com/qi-fg/wordleaf/releases/download/v1.3.0/wordleaf-v1.3.2.apk",
-  "sha256": "7e49cbcd384b043dbd19cbf98dcc90351654973018aab1444adbdfcf75415c4c",
-  "versionCode": 6
+  "size": 463888,
+  "notes": "新增六级本机词表导入与词库切换，重合单词共享已学状态、复习时间、错词和收藏；保留当天目标与各词库学习范围。第三方词表单独导入。",
+  "url": "https://github.com/qi-fg/wordleaf/releases/download/v1.3.0/wordleaf-v1.3.3.apk",
+  "sha256": "b1effc78623b98388da13361ae0f648ca62e3df2e7b4a8c3d16a2813796776ec",
+  "versionName": "1.3.3",
+  "versionCode": 7
 }

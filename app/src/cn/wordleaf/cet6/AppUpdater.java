@@ -41,7 +41,7 @@ final class AppUpdater {
         for(int i=0;i<6;i++) {
             if(!"https".equals(url.getProtocol())) throw new IOException("HTTPS required");
             HttpURLConnection c=(HttpURLConnection)url.openConnection();
-            c.setConnectTimeout(15000);c.setReadTimeout(30000);c.setInstanceFollowRedirects(false);c.setRequestProperty("User-Agent","Wordleaf/1.3.2");
+            c.setConnectTimeout(15000);c.setReadTimeout(30000);c.setInstanceFollowRedirects(false);c.setRequestProperty("User-Agent","Wordleaf/1.3.3");
             int status=c.getResponseCode();
             if(status>=300&&status<400) { String location=c.getHeaderField("Location");c.disconnect();if(location==null)throw new IOException();url=new URL(url,location);continue; }
             if(status!=200) { c.disconnect();throw new IOException("HTTP "+status); }return c;

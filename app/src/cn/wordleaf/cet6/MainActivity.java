@@ -118,6 +118,12 @@ public class MainActivity extends Activity {
                 catch (Exception e) { toast("无法打开文件选择器。"); }
             });
         }
+        @JavascriptInterface public void importWordlist() {
+            runOnUiThread(() -> {
+                try { startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"),102); }
+                catch (Exception e) { toast("无法打开词表文件选择器。"); }
+            });
+        }
     }
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request,result,data);
@@ -126,14 +132,14 @@ public class MainActivity extends Activity {
             if (request == 100 && pendingExport != null) {
                 try (OutputStream out = getContentResolver().openOutputStream(data.getData(),"wt")) { out.write(pendingExport.getBytes(StandardCharsets.UTF_8)); }
                 pendingExport = null; toast("学习进度已备份。");
-            } else if (request == 101) {
+            } else if (request == 101 || request == 102) {
                 try (InputStream in = getContentResolver().openInputStream(data.getData()); ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
                     byte[] b = new byte[4096]; int n;
-                    while ((n = in.read(b)) != -1) { bytes.write(b,0,n); if (bytes.size() > 5000000) throw new IOException("Too large"); }
-                    js("window.receiveBackup(" + JSONObject.quote(new String(bytes.toByteArray(),StandardCharsets.UTF_8)) + ")");
+                    while ((n = in.read(b)) != -1) { bytes.write(b,0,n); if (bytes.size() > (request==102?3000000:5000000)) throw new IOException("Too large"); }
+                    js((request==102?"window.receiveWordlist(":"window.receiveBackup(") + JSONObject.quote(new String(bytes.toByteArray(),StandardCharsets.UTF_8)) + ")");
                 }
             }
-        } catch (Exception e) { pendingExport = null; toast("文件读写失败，请选择有效的进度备份文件。"); }
+        } catch (Exception e) { pendingExport = null; toast(request==102?"文件读取失败，请选择有效的词表文件。":"文件读写失败，请选择有效的进度备份文件。"); }
     }
     @Override public void onBackPressed() {
         web.evaluateJavascript("window.appBack ? window.appBack() : false", result -> { if (!"true".equals(result)) super.onBackPressed(); });

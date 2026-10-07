@@ -25,7 +25,7 @@ async(page)=>{
  await page.evaluate(()=>{switchMode('cet4');});assert(await page.evaluate(()=>state.reviewGoal===20&&today().reviewed.length===0),'Review quotas are independent across modes');
  await page.evaluate(()=>switchMode('cet6'));await page.evaluate(()=>{page='stats';render();});
  await page.getByLabel('每天的复习额度',{exact:true}).selectOption('10');assert(await page.evaluate(()=>state.reviewGoal===10&&plannedReviewWords().length===4),'Changing review quota counts reviews already completed today');
- await page.locator('[data-action=update]').click();assert(await page.getByRole('dialog').innerText().then(t=>t.includes('当前版本 1.3.2')&&t.includes('系统确认覆盖安装')),'Update panel explains version and system installation');
+ await page.locator('[data-action=update]').click();assert(await page.getByRole('dialog').innerText().then(t=>t.includes('当前版本 1.3.3')&&t.includes('系统确认覆盖安装')),'Update panel explains version and system installation');
  await page.evaluate(()=>receiveUpdate({status:'available',message:'发现新版 1.3.3',notes:'测试 <script> 标签'}));assert(await page.locator('[data-action=update-download]').count()===1&&await page.locator('.update-notes script').count()===0,'Available update exposes download and escapes remote release notes');
  await page.evaluate(()=>receiveUpdate({status:'downloading',message:'正在下载 50%'}));assert(await page.locator('[data-action=update-download]').count()===0,'Downloading state prevents duplicate download actions');
  await page.evaluate(()=>receiveUpdate({status:'ready',message:'校验完成'}));assert(await page.locator('[data-action=update-install]').count()===1,'Verified download exposes installation action');
