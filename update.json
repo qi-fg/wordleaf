@@ -1,8 +1,8 @@
 {
-  "size": 463888,
-  "notes": "新增六级本机词表导入与词库切换，重合单词共享已学状态、复习时间、错词和收藏；保留当天目标与各词库学习范围。第三方词表单独导入。",
-  "url": "https://github.com/qi-fg/wordleaf/releases/download/v1.3.0/wordleaf-v1.3.3.apk",
-  "sha256": "b1effc78623b98388da13361ae0f648ca62e3df2e7b4a8c3d16a2813796776ec",
-  "versionName": "1.3.3",
-  "versionCode": 7
+  "versionName": "1.3.4",
+  "versionCode": 8,
+  "url": "https://github.com/qi-fg/wordleaf/releases/download/v1.3.0/wordleaf-v1.3.4.apk",
+  "size": 1230261,
+  "sha256": "d3cfc1735f2e516b490261386a54ed497fe5b478e1d74f2e4f91abfece0bf4e6",
+  "notes": "新增全景风景背景、透明图标与半透明按钮；三张内置壁纸按日离线轮换，可选择固定壁纸或纯色背景。保留原有学习进度与导入词库。"
 }

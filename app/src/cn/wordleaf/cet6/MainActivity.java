@@ -17,6 +17,7 @@ import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private WebView web;
+    private FrameLayout frame;
     private TextToSpeech tts;
     private boolean speechReady;
     private AppUpdater updater;
@@ -28,7 +29,7 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
-        FrameLayout frame = new FrameLayout(this);
+        frame = new FrameLayout(this);
         frame.setBackgroundColor(Color.rgb(248,249,245));
         frame.setOnApplyWindowInsetsListener((v, insets) -> {
             v.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(), insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
@@ -59,7 +60,7 @@ public class MainActivity extends Activity {
                 String p = u.getPath();
                 if (p == null || p.contains("..")) return denied();
                 if (p.equals("/")) p = "/index.html";
-                String type = p.endsWith(".html") ? "text/html" : p.endsWith(".js") ? "application/javascript" : p.endsWith(".css") ? "text/css" : p.endsWith(".svg") ? "image/svg+xml" : "text/plain";
+                String type = p.endsWith(".html") ? "text/html" : p.endsWith(".js") ? "application/javascript" : p.endsWith(".css") ? "text/css" : p.endsWith(".svg") ? "image/svg+xml" : p.endsWith(".jpg") ? "image/jpeg" : "application/octet-stream";
                 try { return new WebResourceResponse(type, "UTF-8", getAssets().open(p.substring(1))); }
                 catch (IOException e) { return denied(); }
             }
@@ -85,6 +86,16 @@ public class MainActivity extends Activity {
     private void toast(String text) { runOnUiThread(() -> Toast.makeText(this,text,Toast.LENGTH_LONG).show()); }
     private void js(String code) { runOnUiThread(() -> web.evaluateJavascript(code,null)); }
     private class Bridge {
+        @JavascriptInterface public void setScenicTheme(boolean scenic) {
+            runOnUiThread(() -> {
+                int color = scenic ? Color.rgb(20,46,57) : Color.rgb(248,249,245);
+                frame.setBackgroundColor(color);
+                web.setBackgroundColor(color);
+                int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+                if (!scenic) flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                getWindow().getDecorView().setSystemUiVisibility(flags);
+            });
+        }
         @JavascriptInterface public void checkUpdate(boolean manual) { if(updater!=null)updater.check(manual); }
         @JavascriptInterface public void downloadUpdate() { if(updater!=null)updater.download(); }
         @JavascriptInterface public void installUpdate() { if(updater!=null)updater.install(); }
