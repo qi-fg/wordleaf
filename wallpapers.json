@@ -1,0 +1,23 @@
+{
+  "format": "wordleaf-wallpapers-v1",
+  "images": [
+    {
+      "id": "lake",
+      "url": "https://raw.githubusercontent.com/qi-fg/wordleaf/main/app/assets/wallpapers/lake.jpg",
+      "size": 200547,
+      "sha256": "3e467bcd1ff8f5c3908b5d533260fdc925672eee2b6adc845a352e7d30c82483"
+    },
+    {
+      "id": "forest",
+      "url": "https://raw.githubusercontent.com/qi-fg/wordleaf/main/app/assets/wallpapers/forest.jpg",
+      "size": 337777,
+      "sha256": "3ec11c093d6ba84bbe35af2bd0a5ccf191b2523611ed68918cd8ba0f3973b527"
+    },
+    {
+      "id": "coast",
+      "url": "https://raw.githubusercontent.com/qi-fg/wordleaf/main/app/assets/wallpapers/coast.jpg",
+      "size": 221047,
+      "sha256": "bf9dfb2ef5622ad1c833e9fed26de044cb37cb5317b6047a0507b46acee3c7a6"
+    }
+  ]
+}

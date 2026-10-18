@@ -21,6 +21,7 @@ public class MainActivity extends Activity {
     private TextToSpeech tts;
     private boolean speechReady;
     private AppUpdater updater;
+    private WallpaperManager wallpapers;
     private String pendingExport;
     private static final String HOST = "app.wordleaf.local";
 
@@ -41,6 +42,15 @@ public class MainActivity extends Activity {
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        // Refresh only WebView resources after an upgrade; never clear learning storage.
+        try {
+            String version=getPackageManager().getPackageInfo(getPackageName(),0).versionName;
+            if(!version.equals(getSharedPreferences("wordleaf",0).getString("assets-version",""))){
+                web.clearCache(true);
+                getSharedPreferences("wordleaf",0).edit().putString("assets-version",version).apply();
+            }
+        } catch(Exception ignored) { }
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
@@ -60,8 +70,10 @@ public class MainActivity extends Activity {
                 String p = u.getPath();
                 if (p == null || p.contains("..")) return denied();
                 if (p.equals("/")) p = "/index.html";
-                String type = p.endsWith(".html") ? "text/html" : p.endsWith(".js") ? "application/javascript" : p.endsWith(".css") ? "text/css" : p.endsWith(".svg") ? "image/svg+xml" : p.endsWith(".jpg") ? "image/jpeg" : "application/octet-stream";
-                try { return new WebResourceResponse(type, "UTF-8", getAssets().open(p.substring(1))); }
+                String type = AssetResponsePolicy.type(p);
+                String encoding=AssetResponsePolicy.encoding(type);
+                java.util.Map<String,String> headers=new java.util.HashMap<>();headers.put("Cache-Control","no-store");
+                try { return new WebResourceResponse(type, encoding, 200, "OK", headers, getAssets().open(p.substring(1))); }
                 catch (IOException e) { return denied(); }
             }
         });
@@ -77,15 +89,17 @@ public class MainActivity extends Activity {
             }
         });
         updater = new AppUpdater(this, data -> js("window.receiveUpdate && window.receiveUpdate(" + data.toString() + ")"));
+        wallpapers = new WallpaperManager(this, () -> { if(!isFinishing())js("window.wallpaperReady && window.wallpaperReady()"); });
         web.setWebChromeClient(new WebChromeClient() {
-            @Override public void onProgressChanged(WebView view, int progress) { if(progress==100) updater.autoCheck(); }
+            @Override public void onProgressChanged(WebView view, int progress) { if(progress==100){updater.autoCheck();wallpapers.refresh();} }
         });
         web.loadUrl("https://" + HOST + "/index.html");
     }
     private WebResourceResponse denied() { return new WebResourceResponse("text/plain","UTF-8",403,"Forbidden",null,new ByteArrayInputStream(new byte[0])); }
     private void toast(String text) { runOnUiThread(() -> Toast.makeText(this,text,Toast.LENGTH_LONG).show()); }
-    private void js(String code) { runOnUiThread(() -> web.evaluateJavascript(code,null)); }
+    private void js(String code) { runOnUiThread(() -> { if(web!=null&&!isDestroyed())web.evaluateJavascript(code,null); }); }
     private class Bridge {
+        @JavascriptInterface public String wallpaperData(String id) { return wallpapers==null?"":wallpapers.data(id); }
         @JavascriptInterface public void setScenicTheme(boolean scenic) {
             runOnUiThread(() -> {
                 int color = scenic ? Color.rgb(20,46,57) : Color.rgb(248,249,245);
@@ -162,7 +176,8 @@ public class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         if(updater!=null)updater.resumed();
+        if(wallpapers!=null)wallpapers.refresh();
         if (web != null) web.evaluateJavascript("window.resumeLearningClock && window.resumeLearningClock(" + System.currentTimeMillis() + ")", null);
     }
-    @Override protected void onDestroy() { if (tts != null) tts.shutdown(); if (web != null) { web.removeJavascriptInterface("Android"); web.destroy(); } super.onDestroy(); }
+    @Override protected void onDestroy() { if(wallpapers!=null)wallpapers.close();if (tts != null) tts.shutdown(); if (web != null) { web.removeJavascriptInterface("Android"); web.destroy(); } super.onDestroy(); }
 }

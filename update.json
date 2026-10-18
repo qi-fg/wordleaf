@@ -1,8 +1,8 @@
 {
-  "versionName": "1.3.4",
-  "versionCode": 8,
-  "url": "https://github.com/qi-fg/wordleaf/releases/download/v1.3.0/wordleaf-v1.3.4.apk",
+  "versionName": "1.3.5",
+  "versionCode": 9,
+  "url": "https://github.com/qi-fg/wordleaf/releases/download/v1.3.0/wordleaf-v1.3.5.apk",
   "size": 1230261,
-  "sha256": "d3cfc1735f2e516b490261386a54ed497fe5b478e1d74f2e4f91abfece0bf4e6",
-  "notes": "新增全景风景背景、透明图标与半透明按钮；三张内置壁纸按日离线轮换，可选择固定壁纸或纯色背景。保留原有学习进度与导入词库。"
+  "sha256": "7ac6adc461ebf2edc876b592867434299109b96e5d1e455900a458bd9291d07c",
+  "notes": "修正安卓背景图片加载兼容问题，升级刷新界面缓存；移除手动换壁纸设置，改为后台自动维护图片与每日选图。下载失败使用内置风景，保留原有学习进度。"
 }
