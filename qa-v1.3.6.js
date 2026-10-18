@@ -1,0 +1,66 @@
+async(page)=>{
+ const checks=[],errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const assert=(ok,label)=>{if(!ok)throw Error(label);checks.push(label);};
+ await page.clock.setFixedTime(new Date('2026-10-18T12:00:00+08:00'));
+ await page.goto('http://127.0.0.1:8765/qa-blank');await page.evaluate(()=>localStorage.clear());
+ await page.goto('http://127.0.0.1:8765/');await page.setViewportSize({width:390,height:844});
+ await page.evaluate(()=>{state=fresh();state.goal=5;state.planChosen=true;save();startStudy('new');});
+ assert(await page.evaluate(()=>today().newTarget===5&&!completedDay(today())),'Starting a new task locks its target without completing it');
+ await page.evaluate(()=>{let n=0;while(study.index<study.queue.length&&n++<30){study.pause='';study.revealed=true;rate('again');}});
+ assert(await page.evaluate(()=>today().new.length===5&&confirmedNewCount(today())===0),'All-forgotten attempts record five introduced words and zero confirmed words');
+ assert(await page.evaluate(()=>!completedDay(today())&&learningDays().size===0),'All-forgotten sessions never check in');
+ assert(await page.evaluate(()=>study.index===study.queue.length&&today().attempts===15),'Each session still limits retries instead of looping forever');
+ assert(await page.locator('[data-action=start][data-id=new]').count()===1,'Completed session offers an explicit retry for pending new words');
+ await page.evaluate(()=>pauseHome());
+ assert((await page.locator('.checkin-link[data-action=nav]').innerText()).includes('还差 5'),'Home reports the unconfirmed daily count');
+ assert(await page.evaluate(()=>remaining()===0&&pendingNewWords().length===5),'Daily exposure quota stays fixed while five words await confirmation');
+ await page.evaluate(()=>startStudy('new'));
+ assert(await page.evaluate(()=>study.queue.length===5&&study.queue.every(w=>today().new.includes(w))),'Retry session only reuses introduced words rather than assigning five more');
+ await page.evaluate(()=>{while(study.index<study.queue.length){study.pause='';study.revealed=true;rate('hard');}});
+ assert(await page.evaluate(()=>confirmedNewCount(today())===0&&!completedDay(today())),'All-vague ratings also fail to complete the day');
+ assert(await page.evaluate(()=>today().new.length===5&&today().reviewed.length===0),'Pending practice adds neither new words nor review quota usage');
+ await page.evaluate(()=>{pauseHome();startStudy('new');study.revealed=true;rate('good');});
+ assert(await page.evaluate(()=>confirmedNewCount(today())===1&&pendingNewWords().length===4),'Only an explicit remembered rating confirms a new word');
+ const first=await page.evaluate(()=>today().newConfirmed[0]);
+ await page.evaluate(w=>{recordPractice(w,false,false,false,'good');recordPractice(w,false,false,false,'hard');},first);
+ assert(await page.evaluate(()=>confirmedNewCount(today())===1),'Repeated confirmations do not inflate the count and a prior confirmation remains valid');
+ const next=await page.evaluate(()=>study.queue[study.index]);
+ await page.evaluate(w=>recordPractice(w,false,true,true),next);
+ assert(await page.evaluate(()=>confirmedNewCount(today())===1),'Correct spelling never substitutes for a remembered meaning');
+ await page.evaluate(()=>{study.revealed=true;rate('good');});
+ assert(await page.evaluate(()=>confirmedNewCount(today())===2),'Another unique remembered new word adds one confirmation');
+ await page.evaluate(()=>{undo();});assert(await page.evaluate(()=>confirmedNewCount(today())===1),'Undo restores the exact previous confirmation set');
+ await page.evaluate(()=>{study.revealed=true;rate('good');while(study.index<study.queue.length){study.pause='';study.revealed=true;rate('good');}});
+ assert(await page.evaluate(()=>confirmedNewCount(today())===5&&completedDay(today())&&learningDays().size===1),'All five distinct confirmations complete exactly one learning day');
+ await page.evaluate(()=>undo());assert(await page.evaluate(()=>!completedDay(today())&&learningDays().size===0),'Undoing the completing confirmation revokes the check-in');
+ await page.evaluate(()=>{study.revealed=true;rate('good');});
+ assert(await page.evaluate(()=>completedDay(today())&&today().new.length===5),'Re-confirming restores the day without assigning extra new words');
+ const backup=await page.evaluate(()=>clone(snapshotLibrary()));
+ await page.goto('http://127.0.0.1:8765/qa-blank');await page.evaluate(d=>localStorage.setItem('wordleaf-state',JSON.stringify(d)),backup);await page.goto('http://127.0.0.1:8765/');
+ assert(await page.evaluate(()=>confirmedNewCount(today())===5&&completedDay(today())),'Cold restore retains the exact confirmation set and daily completion');
+ assert(await page.evaluate(()=>validateLibrary(clone(snapshotLibrary())).books.cet6.history[dayKey()].newConfirmed.length===5),'Confirmation sets survive backup validation');
+ for(const kind of ['duplicate','outside','type']){
+  const rejected=await page.evaluate(kind=>{const d=clone(snapshotLibrary()),h=d.books.cet6.history[dayKey()];h.newConfirmed=kind==='duplicate'?[h.new[0],h.new[0]]:kind==='outside'?[WORDS.find(w=>!h.new.includes(w.w)).w]:'all';try{validateLibrary(d);return false;}catch(e){return true;}},kind);
+  assert(rejected,'Invalid confirmation backup rejected: '+kind);
+ }
+ const migrated=await page.evaluate(()=>{const d=clone(snapshotLibrary()),h=d.books.cet6.history[dayKey()];delete h.newConfirmed;const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);d.books.cet6.history[dayKey(yesterday)]={...clone(h)};return d;});
+ await page.goto('http://127.0.0.1:8765/qa-blank');await page.evaluate(d=>localStorage.setItem('wordleaf-state',JSON.stringify(d)),migrated);await page.goto('http://127.0.0.1:8765/');
+ assert(await page.evaluate(()=>!completedDay(today())&&confirmedNewCount(today())===0&&pendingNewWords().length===5),'Old current-day exposure records need confirmation instead of guessed remembered ratings');
+ assert(await page.evaluate(()=>learningDays().size===1),'Historical legacy check-ins are preserved');
+ assert(await page.evaluate(()=>today().new.length===5&&today().newTarget===5&&Object.keys(state.words).length===5),'Legacy migration retains practice, locked target and word progress');
+ await page.evaluate(()=>{state.goal=100;startStudy('new');});
+ assert(await page.evaluate(()=>study.queue.length===5&&today().newTarget===5),'Changing the configured goal does not enlarge the locked task');
+ await page.evaluate(()=>skipKnown(study.queue[study.index]));
+ assert(await page.evaluate(()=>confirmedNewCount(today())===0&&study.queue.length===5&&today().new.length===5),'Skipping a pending word neither confirms it nor replaces it with additional new words');
+ await page.evaluate(()=>{pauseHome();state.session=null;study=null;startStudy('daily');});
+ assert(await page.evaluate(()=>new Set(study.queue).size===study.queue.length&&study.queue.every(w=>today().new.includes(w))),'Daily task revisits pending words across plan boundaries without duplicate queue entries');
+ await page.clock.setFixedTime(new Date('2026-10-19T12:00:00+08:00'));await page.evaluate(()=>pauseHome());
+ assert(await page.evaluate(()=>pendingNewWords().length===0&&!learningDays().has('2026-10-18')),'An unfinished strict day never becomes a legacy completion after midnight');
+ assert(await page.evaluate(()=>learningDays().size===1),'Only the older legacy completed date is retained');
+ await page.evaluate(()=>{state.goal=5;state.session=null;study=null;startStudy('new');});
+ assert(await page.evaluate(()=>today().newTarget===5&&today().new.length===0),'The next day starts its own independent new-word target');
+ await page.evaluate(()=>{study.revealed=true;rate('hard');pauseHome();});
+ for(const width of [320,390]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Pending-word home fits ${width}px`);}
+ await page.screenshot({path:'output/playwright/v1.3.6-pending.png'});
+ assert(errors.length===0,'No runtime errors');return{passed:checks.length,checks};
+}

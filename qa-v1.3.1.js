@@ -12,7 +12,7 @@ async(page)=>{
   const fixture=await page.evaluate(()=>{
     useBook('cet6');const s=fresh();s.goal=5;s.planChosen=true;
     let offset=500;
-    function history(date,n,target){const list=WORDS.slice(offset,offset+n).map(w=>w.w);offset+=n;for(const w of list)s.words[w]={...emptyProgress(),reps:1,stage:1,first:date,due:Date.now()+30*DAY};s.history[date]={...emptyHistory(),words:list,new:list,attempts:n};if(target!=null)s.history[date].newTarget=target;else delete s.history[date].newTarget;}
+    function history(date,n,target){const list=WORDS.slice(offset,offset+n).map(w=>w.w);offset+=n;for(const w of list)s.words[w]={...emptyProgress(),reps:1,stage:1,first:date,due:Date.now()+30*DAY};s.history[date]={...emptyHistory(),newConfirmed:null,words:list,new:list,attempts:n};if(target!=null)s.history[date].newTarget=target;else delete s.history[date].newTarget;}
     history('2026-09-26',20,null);history('2026-09-28',3,5);history('2026-09-29',5,5);history('2026-09-30',5,5);
     return{version:3,activeMode:'cet6',books:{cet6:s}};
   });
@@ -40,13 +40,15 @@ async(page)=>{
   await learn('again');
   assert(await page.evaluate(()=>today().new.length===2&&today().attempts===2&&!completedDay(today())),'A completed new-word attempt is recorded, but partial completion does not check in');
   for(let i=0;i<3;i++)await learn();
-  assert(await total()===3&&await page.evaluate(()=>completedDay(today())&&streak()===3),'Only finishing the locked new-word target completes the day');
+  assert(await total()===2&&await page.evaluate(()=>confirmedNewCount(today())===4&&!completedDay(today())),'One forgotten word keeps the daily check-in incomplete');
+  await learn();
+  assert(await total()===3&&await page.evaluate(()=>completedDay(today())&&streak()===3),'Confirming the forgotten word completes the locked daily target');
   assert((await page.locator('#toast').innerText()).includes('学习打卡已点亮'),'Completing the goal shows an automatic check-in notice');
   await click('撤销上一次选择');
-  assert(await total()===2&&await page.evaluate(()=>!completedDay(today())&&today().new.length===4),'Undo of the completing attempt also removes the check-in');
+  assert(await total()===2&&await page.evaluate(()=>!completedDay(today())&&confirmedNewCount(today())===4&&today().new.length===5),'Undo of the completing attempt also removes the check-in');
   await action('rate','good');
   assert(await total()===3,'Re-completing an undone word restores one check-in without duplication');
-  await learn();
+  await page.evaluate(()=>recordPractice(today().new[0],false,false,false,'good'));
   assert(await page.evaluate(()=>today().new.length===5&&learningDays().size===3),'A same-session meaning retry does not inflate new-word counts or learning days');
   await click('测一测这组的拼写');
   const queue=await page.evaluate(()=>study.queue.slice());
@@ -84,7 +86,7 @@ async(page)=>{
   await learn();await learn();await click('回到今日');
   assert(await total()===1,'Completing the last remaining words completes the assigned learning day');
   await page.clock.setFixedTime(new Date('2026-10-05T12:00:00'));await page.clock.runFor(30001);
-  assert(await page.getByRole('button',{name:'完成当天新词任务，自动打卡',exact:true}).count()===1,'Home refreshes the check-in status after a foreground date rollover');
+  assert(await page.getByRole('button',{name:'新词逐个点过“记住了”，达标后自动打卡',exact:true}).count()===1,'Home refreshes the check-in status after a foreground date rollover');
   await click('我的');await page.clock.setFixedTime(new Date('2026-10-06T12:00:00'));await page.clock.runFor(30001);
   assert(await page.locator('[aria-current="date"][aria-label^="2026-10-06"]').count()===1,'The visible learning calendar refreshes its current date automatically');
   assert(errors.length===0,'Check-in, migration, calendar and backup workflows have no browser runtime errors');

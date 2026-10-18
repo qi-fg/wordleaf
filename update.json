@@ -1,8 +1,8 @@
 {
-  "versionName": "1.3.5",
-  "versionCode": 9,
-  "url": "https://github.com/qi-fg/wordleaf/releases/download/v1.3.0/wordleaf-v1.3.5.apk",
-  "size": 1230261,
-  "sha256": "7ac6adc461ebf2edc876b592867434299109b96e5d1e455900a458bd9291d07c",
-  "notes": "修正安卓背景图片加载兼容问题，升级刷新界面缓存；移除手动换壁纸设置，改为后台自动维护图片与每日选图。下载失败使用内置风景，保留原有学习进度。"
+  "versionName": "1.3.6",
+  "versionCode": 10,
+  "url": "https://github.com/qi-fg/wordleaf/releases/download/v1.3.0/wordleaf-v1.3.6.apk",
+  "size": 1234357,
+  "sha256": "f4942bc59554ac8c792f8a3cc6c18b79d4778933e8e850c1c8606c6d35c9e0ee",
+  "notes": "修正新词全部选不会仍能打卡：每个当天新词至少选过一次记住了才计入达标。未确认新词可继续巩固，不额外增加新词；旧历史打卡保留，升级当天旧练习需重新确认。"
 }

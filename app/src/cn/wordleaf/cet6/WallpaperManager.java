@@ -54,7 +54,7 @@ final class WallpaperManager {
     private byte[] download(String address,int limit)throws Exception{
         HttpURLConnection c=(HttpURLConnection)new URL(address).openConnection();activeConnection=c;
         c.setConnectTimeout(6000);c.setReadTimeout(8000);c.setInstanceFollowRedirects(false);
-        c.setRequestProperty("User-Agent","Wordleaf/1.3.5");
+        c.setRequestProperty("User-Agent","Wordleaf/1.3.6");
         try{
             if(closed||c.getResponseCode()!=200)throw new IOException("Unavailable");
             try(InputStream in=c.getInputStream()){return read(in,limit);}
